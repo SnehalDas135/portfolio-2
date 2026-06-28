@@ -46,6 +46,32 @@ window.addEventListener('scroll', updatePageProgress, { passive: true });
 window.addEventListener('resize', updatePageProgress);
 updatePageProgress();
 
+/* ── SCROLL-REACTIVE SECTION ACCENTS ── */
+const animatedSections = [...document.querySelectorAll('section[id]')];
+let scrollTicking = false;
+function updateScrollReactiveSections() {
+  const vh = window.innerHeight || 1;
+  animatedSections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    const center = rect.top + rect.height / 2;
+    const distance = Math.abs(center - vh / 2);
+    const strength = Math.max(0, 1 - distance / (vh * .72));
+    const shift = (center - vh / 2) * -0.08;
+    section.style.setProperty('--section-glow', (strength * .9).toFixed(3));
+    section.style.setProperty('--section-shift', `${shift.toFixed(1)}px`);
+    section.style.setProperty('--section-blur', `${(strength * 18).toFixed(1)}px`);
+  });
+  scrollTicking = false;
+}
+function requestScrollReactiveUpdate() {
+  if (scrollTicking) return;
+  scrollTicking = true;
+  requestAnimationFrame(updateScrollReactiveSections);
+}
+window.addEventListener('scroll', requestScrollReactiveUpdate, { passive: true });
+window.addEventListener('resize', requestScrollReactiveUpdate);
+requestScrollReactiveUpdate();
+
 /* ── ANIME.JS DYNAMIC MOTION ── */
 function initAnimeMotion() {
   if (!hasAnime()) return;
@@ -123,7 +149,7 @@ function initAnimeMotion() {
     loop: true
   });
 
-  document.querySelectorAll('.btn-fill, .btn-line, .pill').forEach(el => {
+  document.querySelectorAll('.btn-fill, .btn-line, .btn-resume, .pill').forEach(el => {
     el.addEventListener('mouseenter', () => anime.remove(el));
     el.addEventListener('mouseenter', () => anime({ targets: el, scale: 1.025, duration: 260, easing: 'easeOutQuad' }));
     el.addEventListener('mouseleave', () => {
