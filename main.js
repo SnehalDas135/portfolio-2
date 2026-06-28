@@ -5,6 +5,9 @@
    ============================================================ */
 
 /* ── THEME ── */
+const motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hasAnime = () => typeof window.anime === 'function' && motionOK;
+
 function toggleTheme() {
   const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', t);
@@ -30,6 +33,135 @@ function type() {
   setTimeout(type, del?36:68);
 }
 if (tw) type();
+
+/* ── PAGE PROGRESS ── */
+function updatePageProgress() {
+  const bar = document.querySelector('.nav-progress');
+  if (!bar) return;
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
+  bar.style.transform = `scaleX(${pct})`;
+}
+window.addEventListener('scroll', updatePageProgress, { passive: true });
+window.addEventListener('resize', updatePageProgress);
+updatePageProgress();
+
+/* ── ANIME.JS DYNAMIC MOTION ── */
+function initAnimeMotion() {
+  if (!hasAnime()) return;
+
+  const scrollLine = document.querySelector('.scroll-line');
+  if (scrollLine) {
+    scrollLine.style.animation = 'none';
+    anime({
+      targets: scrollLine,
+      keyframes: [
+        { scaleY: 0, transformOrigin: 'top' },
+        { scaleY: 1, transformOrigin: 'top' },
+        { scaleY: 0, transformOrigin: 'bottom' }
+      ],
+      duration: 1800,
+      easing: 'easeInOutSine',
+      loop: true
+    });
+  }
+
+  const marquee = document.querySelector('[data-marquee]');
+  if (marquee) {
+    marquee.style.animation = 'none';
+    const marqueeLoop = anime({
+      targets: marquee,
+      translateX: ['0%', '-50%'],
+      duration: 26000,
+      easing: 'linear',
+      loop: true
+    });
+    marquee.closest('.marquee-strip')?.addEventListener('mouseenter', () => marqueeLoop.pause());
+    marquee.closest('.marquee-strip')?.addEventListener('mouseleave', () => marqueeLoop.play());
+  }
+
+  const ribbonWords = document.querySelectorAll('.ribbon-word');
+  if (ribbonWords.length) {
+    anime({
+      targets: ribbonWords,
+      translateY: (_, i) => i % 2 ? [-3, 6] : [5, -4],
+      scale: (_, i) => i % 3 === 0 ? [1, 1.06] : [1.03, 1],
+      opacity: (_, i) => i % 2 ? [.44, .95] : [.72, 1],
+      delay: anime.stagger(75),
+      duration: 2600,
+      direction: 'alternate',
+      easing: 'easeInOutSine',
+      loop: true
+    });
+  }
+
+  anime({
+    targets: '.pulse-dot',
+    scale: [1, .62, 1],
+    opacity: [1, .35, 1],
+    duration: 1900,
+    easing: 'easeInOutSine',
+    loop: true
+  });
+
+  anime({
+    targets: '.hero-photo-wrap',
+    translateY: [-8, 8],
+    rotate: [-.35, .35],
+    duration: 5200,
+    direction: 'alternate',
+    easing: 'easeInOutSine',
+    loop: true
+  });
+
+  anime({
+    targets: '.hero-stats-bar',
+    translateY: [0, -6],
+    duration: 3600,
+    direction: 'alternate',
+    easing: 'easeInOutSine',
+    loop: true
+  });
+
+  document.querySelectorAll('.btn-fill, .btn-line, .pill').forEach(el => {
+    el.addEventListener('mouseenter', () => anime.remove(el));
+    el.addEventListener('mouseenter', () => anime({ targets: el, scale: 1.025, duration: 260, easing: 'easeOutQuad' }));
+    el.addEventListener('mouseleave', () => {
+      anime.remove(el);
+      anime({ targets: el, scale: 1, duration: 300, easing: 'easeOutQuad' });
+    });
+  });
+
+  document.querySelectorAll('.skill-card, .exp-card, .project-row, .contact-row').forEach(el => {
+    el.addEventListener('pointermove', e => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - .5;
+      const y = (e.clientY - r.top) / r.height - .5;
+      anime.remove(el);
+      anime({
+        targets: el,
+        rotateX: -y * 3,
+        rotateY: x * 4,
+        translateY: -3,
+        scale: 1.008,
+        duration: 420,
+        easing: 'easeOutExpo'
+      });
+    });
+    el.addEventListener('pointerleave', () => {
+      anime.remove(el);
+      anime({
+        targets: el,
+        rotateX: 0,
+        rotateY: 0,
+        translateY: 0,
+        scale: 1,
+        duration: 650,
+        easing: 'easeOutExpo'
+      });
+    });
+  });
+}
 
 /* ── SCROLL HINT FADE ── */
 window.addEventListener('scroll', () => {
@@ -117,16 +249,37 @@ function tweenAll(els, props, opts = {}) {
    HERO — runs on DOMContentLoaded (no scroll needed)
    ═══════════════════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', () => {
-  const heroEls = document.querySelectorAll('.anim-hero');
-  heroEls.forEach((el, i) => {
-    tween(el, { opacity:[0,1], translateY:[40,0] }, {
-      duration: 800, delay: 120 + i * 140, easing: ease.outExpo
-    });
-  });
+  initAnimeMotion();
 
-  // photo slides in from right
-  const photo = document.querySelector('.anim-photo');
-  if (photo) tween(photo, { opacity:[0,1], translateX:[60,0] }, { duration: 1000, delay: 200, easing: ease.outExpo });
+  const heroEls = document.querySelectorAll('.anim-hero');
+  if (hasAnime()) {
+    anime({
+      targets: heroEls,
+      opacity: [0, 1],
+      translateY: [42, 0],
+      delay: anime.stagger(130, { start: 110 }),
+      duration: 900,
+      easing: 'easeOutExpo'
+    });
+
+    anime({
+      targets: '.anim-photo',
+      opacity: [0, 1],
+      translateX: [62, 0],
+      duration: 1050,
+      delay: 220,
+      easing: 'easeOutExpo'
+    });
+  } else {
+    heroEls.forEach((el, i) => {
+      tween(el, { opacity:[0,1], translateY:[40,0] }, {
+        duration: 800, delay: 120 + i * 140, easing: ease.outExpo
+      });
+    });
+
+    const photo = document.querySelector('.anim-photo');
+    if (photo) tween(photo, { opacity:[0,1], translateX:[60,0] }, { duration: 1000, delay: 200, easing: ease.outExpo });
+  }
 
   // stat count-up
   setTimeout(() => {
@@ -134,6 +287,17 @@ window.addEventListener('DOMContentLoaded', () => {
       const end = parseFloat(el.dataset.count);
       const suffix = el.dataset.suffix || '';
       const dec = String(end).includes('.') ? 1 : 0;
+      if (hasAnime()) {
+        const state = { value: 0 };
+        anime({
+          targets: state,
+          value: end,
+          duration: 1300,
+          easing: 'easeOutExpo',
+          update: () => { el.textContent = state.value.toFixed(dec) + suffix; }
+        });
+        return;
+      }
       let s = null;
       function countFrame(ts) {
         if (!s) s = ts;
